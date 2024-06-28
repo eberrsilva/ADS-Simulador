@@ -1,0 +1,122 @@
+# Preparar dados
+```{r}
+tc <- read.table("./data/tc.txt", header = TRUE)
+ts <- read.table("./data/ts.txt", header = TRUE)
+
+dataframe_tempos <- cbind(tc, ts)
+
+colnames(dataframe_tempos) <- c("chegada", "servico")
+
+dataframe_tempos$chegada <- as.numeric(dataframe_tempos$chegada)
+dataframe_tempos$servico <- as.numeric(dataframe_tempos$servico)
+summary(dataframe_tempos)
+```
+
+# Modelo de Entrada
+
+## Exploração dos dados
+```{r}
+data.frame(
+  TempoChegada = c("Média", "Desvio Padrão", "Variância", "Mediana", "Mínimo", "Máximo", "Amplitude"),
+  Valor = c(
+    mean(dataframe_tempos$chegada),  # média
+    sd(dataframe_tempos$chegada),  # desvio padrão
+    var(dataframe_tempos$chegada),  # variância da amostra
+    median(dataframe_tempos$chegada),  # mediana
+    min(dataframe_tempos$chegada),  # minimo
+    max(dataframe_tempos$chegada),  # maximo
+    max(dataframe_tempos$chegada) - min(dataframe_tempos$chegada)  # amplitude
+  )
+)
+
+data.frame(
+  TempoServico = c("Média", "Desvio Padrão", "Variância", "Mediana", "Mínimo", "Máximo", "Amplitude"),
+  Valor = c(
+    mean(dataframe_tempos$servico),  # média
+    sd(dataframe_tempos$servico),  # desvio padrão
+    var(dataframe_tempos$servico),  # variância da amostra
+    median(dataframe_tempos$servico),  # mediana
+    min(dataframe_tempos$servico),  # minimo
+    max(dataframe_tempos$servico),  # maximo
+    max(dataframe_tempos$servico) - min(dataframe_tempos$servico)  # amplitude
+  )
+)
+
+```
+
+## Histograma
+```{r}
+par(mfrow=c(1,2))
+hist(dataframe_tempos$chegada, main = "Histograma: tempos de chegada", xlab = "Tempo de chegada", ylab = "Frequência", col = "blue")
+hist(dataframe_tempos$servico, main = "Histograma: tempos de serviço", xlab = "Tempo de serviço", ylab = "Frequência", col = "red")
+```
+
+
+# Simulador Computacional
+```{r}
+simulador_computacional <- function(dados, qtde_atendentes, qtde_simulacoes) {
+  fila <- data.frame()
+  atendidos <- 0
+  qtde_chegadas <- 0
+  unidade_tempo <- 0
+  tempo_total_na_fila <- 0
+  atendentes <- data.frame(disponivel = rep(TRUE, 2), tempo_servico = rep(0, qtde_atendentes), tempo_atendimento = rep(0, qtde_atendentes))
+
+  dados$soma_chegada <- cumsum(dados$chegada)
+
+  for (i in 1:qtde_simulacoes) {
+    while (atendidos < nrow(dados)) {
+      while (!is.na(dados$soma_chegada[qtde_chegadas + 1]) && dados$soma_chegada[qtde_chegadas + 1] == unidade_tempo) {
+        fila <- rbind(fila, dados[qtde_chegadas + 1, ])
+        qtde_chegadas <- qtde_chegadas + 1
+      }
+
+      for (j in 1:qtde_atendentes) {
+        if (atendentes$disponivel[j]) {
+          if (nrow(fila) > 0) {
+            atendentes$tempo_servico[j] <- fila$servico[1]
+            atendentes$disponivel[j] <- FALSE
+            atendentes$tempo_atendimento[j] <- 0
+            tempo_total_na_fila <- tempo_total_na_fila + (unidade_tempo - fila$soma_chegada[1])
+            fila <- fila[-1, ]
+          }
+        } else {
+          atendentes$tempo_atendimento[j] <- atendentes$tempo_atendimento[j] + 1
+          if (atendentes$tempo_atendimento[j] == atendentes$tempo_servico[j]){
+            atendidos <- atendidos + 1
+            atendentes$disponivel[j] <- TRUE
+          }
+        }
+      }
+
+      unidade_tempo <- unidade_tempo + 1
+    }
+  }
+
+  return(data.frame(
+    atendidos = atendidos,
+    qtde_chegadas = qtde_chegadas,
+    unidade_tempo = unidade_tempo,
+    media_fila = tempo_total_na_fila / qtde_chegadas
+  ))
+
+}
+
+```
+
+# Gerador de Números Aleatórios
+```{r}
+gerar_numeros_aleatorios <- function(n, media, dv) {
+  chegada <- rnorm(n, media, dv)
+  servico <- rnorm(n, media, dv)
+
+  return(data.frame(chegada, servico))
+}
+```
+
+# Execução do Simulador
+```{r}
+gerar_numeros_aleatorios(100, 5, 2)
+
+simulador_computacional(dataframe_tempos, 2, 1)
+```
