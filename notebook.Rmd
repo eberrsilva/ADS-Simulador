@@ -1,3 +1,13 @@
+# Instalando os pacotes
+```{r}
+# install.packages("base")
+library(ggplot2)
+# install.packages("corrplot")
+library(corrplot)
+# load tseries module
+library(tseries)
+```
+
 # Preparar dados
 ```{r}
 tc <- read.table("./data/tc.txt", header = TRUE)
@@ -13,36 +23,61 @@ summary(dataframe_tempos)
 ```
 
 # Modelo de Entrada
+## Calculando os outliers
+```{r}
+# Outliers da chegada
+quantile_chegada <- quantile(dataframe_tempos$chegada, probs=c(.25, .75), na.rm = FALSE)
+amplitude_chegada <- max(dataframe_tempos$chegada) - min(dataframe_tempos$chegada)
+up_extremo_chegada <-  quantile_chegada[2]+3*amplitude_chegada
+up_moderado_chegada <-  quantile_chegada[2]+1.5*amplitude_chegada
+low_extremo_chegada <- quantile_chegada[1]-3*amplitude_chegada
+low_moderado_chegada <- quantile_chegada[1]-1.5*amplitude_chegada
+
+# Outliers da chegada
+quantile_servico <- quantile(dataframe_tempos$servico, probs=c(.25, .75), na.rm = FALSE)
+amplitude_servico <- max(dataframe_tempos$servico) - min(dataframe_tempos$servico)
+up_extremo_servico <-  quantile_servico[2]+3*amplitude_servico
+up_moderado_servico <-  quantile_servico[2]+1.5*amplitude_servico
+low_extremo_servico <- quantile_servico[1]-3*amplitude_servico
+low_moderado_servico <- quantile_servico[1]-1.5*amplitude_servico
+
+```
 
 ## Exploração dos dados
+### Criando data frame com medidas de posição e dispersão dos dados
 ```{r}
 data.frame(
-  TempoChegada = c("Média", "Desvio Padrão", "Variância", "Mediana", "Mínimo", "Máximo", "Amplitude"),
-  Valor = c(
+  Metrica = c("Média", "Desvio Padrão", "Variância", "Mediana", "Mínimo", "Máximo", "Amplitude", "Outlier Baixo Moderado", "Outlier Alto Moderado", "Outlier Baixo Extremo", "Outlier Alto Extremo"),
+  TempoChegada = c(
     mean(dataframe_tempos$chegada),  # média
     sd(dataframe_tempos$chegada),  # desvio padrão
     var(dataframe_tempos$chegada),  # variância da amostra
     median(dataframe_tempos$chegada),  # mediana
     min(dataframe_tempos$chegada),  # minimo
     max(dataframe_tempos$chegada),  # maximo
-    max(dataframe_tempos$chegada) - min(dataframe_tempos$chegada)  # amplitude
-  )
-)
-
-data.frame(
-  TempoServico = c("Média", "Desvio Padrão", "Variância", "Mediana", "Mínimo", "Máximo", "Amplitude"),
-  Valor = c(
+    amplitude_chegada,  # amplitude
+    low_moderado_chegada,
+    up_moderado_chegada,
+    low_extremo_chegada,
+    up_extremo_chegada
+  ),
+  TempoServico = c(
     mean(dataframe_tempos$servico),  # média
     sd(dataframe_tempos$servico),  # desvio padrão
     var(dataframe_tempos$servico),  # variância da amostra
     median(dataframe_tempos$servico),  # mediana
     min(dataframe_tempos$servico),  # minimo
     max(dataframe_tempos$servico),  # maximo
-    max(dataframe_tempos$servico) - min(dataframe_tempos$servico)  # amplitude
+    amplitude_servico,  # amplitude
+    low_moderado_servico,
+    up_moderado_servico,
+    low_extremo_servico,
+    up_extremo_servico
   )
 )
-
 ```
+#### Com o dataframe é possível identificar que o dataset não possui outliers.
+
 
 ## Histograma
 ```{r}
@@ -51,6 +86,14 @@ hist(dataframe_tempos$chegada, main = "Histograma: tempos de chegada", xlab = "T
 hist(dataframe_tempos$servico, main = "Histograma: tempos de serviço", xlab = "Tempo de serviço", ylab = "Frequência", col = "red")
 ```
 
+## Correlação
+```{r}
+pairs(dataframe_tempos)
+acf(dataframe_tempos$chegada,pl=TRUE)
+acf(dataframe_tempos$servico,pl=TRUE)
+corrplot(cor(dataframe_tempos), method = "number")
+
+```
 
 # Simulador Computacional
 ```{r}
