@@ -87,8 +87,8 @@ acf(dataframe_tempos$servico,pl=TRUE)
 corrplot(cor(dataframe_tempos), method = "number")
 
 ```
-
-# Simulador Computacional
+# Criando funções
+## Simulador Computacional
 ```{r}
 simulador_computacional <- function(dados, qtde_atendentes, qtde_simulacoes) {
   fila <- data.frame()
@@ -140,11 +140,22 @@ simulador_computacional <- function(dados, qtde_atendentes, qtde_simulacoes) {
 
 ```
 
-# Gerador de Números Aleatórios
+## Gerador de Números Aleatórios
 ```{r}
-gerar_numeros_aleatorios <- function(n, media, dv) {
-  chegada <- rnorm(n, media, dv)
-  servico <- rnorm(n, media, dv)
+trunc <- function(x, ..., prec = 0) base::trunc(x * 10^prec, ...) / 10^prec;
+
+gerar_numeros_aleatorios <- function(n) {
+  # Gerar numeros aleatório utilizando uma distribuição normal
+  chegada <- rnorm(n, df_medidas[1, c(2)], df_medidas[2, c(2)])
+  servico <- runif(n, df_medidas[5, c(3)], df_medidas[6, c(3)])
+
+  # Corrigir os números menores de 0.5 para 0
+  chegada <- ifelse(chegada < 0.5, 0, chegada)
+  servico <- ifelse(servico < 0.5, 0, servico)
+
+  # Truncar os valores gerados
+  chegada <- as.integer(trunc(chegada, prec=0))
+  servico <- as.integer(trunc(servico, prec=0))
 
   return(data.frame(chegada, servico))
 }
