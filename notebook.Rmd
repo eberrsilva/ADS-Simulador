@@ -161,9 +161,38 @@ gerar_numeros_aleatorios <- function(n) {
 }
 ```
 
-# Execução do Simulador
+# Validando gerador de números
+## Gerando histograma
 ```{r}
-gerar_numeros_aleatorios(100, 5, 2)
+df_numeros_aleatorios <- gerar_numeros_aleatorios(nrow(dataframe_tempos))
 
-simulador_computacional(dataframe_tempos, 2, 1)
+par(mfrow=c(1,2))
+hist(df_numeros_aleatorios$chegada, main = "Histograma: tempos de chegada", xlab = "Tempo de chegada", ylab = "Frequência", col = "blue")
+hist(df_numeros_aleatorios$servico, main = "Histograma: tempos de serviço", xlab = "Tempo de serviço", ylab = "Frequência", col = "red")
+```
+### Utilizando os histogramas gerados podemos observar que os dados gerados de forma aleatória seguem o mesmo padrão dos dados originais
+
+## Correlação
+```{r}
+pairs(df_numeros_aleatorios)
+acf(df_numeros_aleatorios$chegada,pl=TRUE)
+acf(df_numeros_aleatorios$servico,pl=TRUE)
+corrplot(cor(df_numeros_aleatorios), method = "number")
+
+```
+
+
+# Execução do Simulador
+## Executando simulador com os dados originais
+```{r}
+print(simulador_computacional(dataframe_tempos, 1, 1))
+
+```
+
+
+## Executando simulador com os dados aleatorios
+```{r}
+df_numeros_aleatorios <- gerar_numeros_aleatorios(nrow(dataframe_tempos))
+
+simulador_computacional(df_numeros_aleatorios, 1, 1)
 ```
