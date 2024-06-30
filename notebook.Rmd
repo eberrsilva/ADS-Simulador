@@ -28,25 +28,17 @@ summary(dataframe_tempos)
 # Outliers da chegada
 quantile_chegada <- quantile(dataframe_tempos$chegada, probs=c(.25, .75), na.rm = FALSE)
 amplitude_chegada <- max(dataframe_tempos$chegada) - min(dataframe_tempos$chegada)
-up_extremo_chegada <-  quantile_chegada[2]+3*amplitude_chegada
-up_moderado_chegada <-  quantile_chegada[2]+1.5*amplitude_chegada
-low_extremo_chegada <- quantile_chegada[1]-3*amplitude_chegada
-low_moderado_chegada <- quantile_chegada[1]-1.5*amplitude_chegada
 
 # Outliers da chegada
 quantile_servico <- quantile(dataframe_tempos$servico, probs=c(.25, .75), na.rm = FALSE)
 amplitude_servico <- max(dataframe_tempos$servico) - min(dataframe_tempos$servico)
-up_extremo_servico <-  quantile_servico[2]+3*amplitude_servico
-up_moderado_servico <-  quantile_servico[2]+1.5*amplitude_servico
-low_extremo_servico <- quantile_servico[1]-3*amplitude_servico
-low_moderado_servico <- quantile_servico[1]-1.5*amplitude_servico
 
 ```
 
 ## Exploração dos dados
 ### Criando data frame com medidas de posição e dispersão dos dados
 ```{r}
-data.frame(
+df_medidas <- data.frame(
   Metrica = c("Média", "Desvio Padrão", "Variância", "Mediana", "Mínimo", "Máximo", "Amplitude", "Outlier Baixo Moderado", "Outlier Alto Moderado", "Outlier Baixo Extremo", "Outlier Alto Extremo"),
   TempoChegada = c(
     mean(dataframe_tempos$chegada),  # média
@@ -56,10 +48,10 @@ data.frame(
     min(dataframe_tempos$chegada),  # minimo
     max(dataframe_tempos$chegada),  # maximo
     amplitude_chegada,  # amplitude
-    low_moderado_chegada,
-    up_moderado_chegada,
-    low_extremo_chegada,
-    up_extremo_chegada
+    quantile_chegada[1]-1.5*amplitude_chegada,
+    quantile_chegada[2]+1.5*amplitude_chegada,
+    quantile_chegada[1]-3*amplitude_chegada,
+    quantile_chegada[2]+3*amplitude_chegada
   ),
   TempoServico = c(
     mean(dataframe_tempos$servico),  # média
@@ -69,10 +61,10 @@ data.frame(
     min(dataframe_tempos$servico),  # minimo
     max(dataframe_tempos$servico),  # maximo
     amplitude_servico,  # amplitude
-    low_moderado_servico,
-    up_moderado_servico,
-    low_extremo_servico,
-    up_extremo_servico
+    quantile_servico[1]-1.5*amplitude_servico,
+    quantile_servico[2]+1.5*amplitude_servico,
+    quantile_servico[1]-3*amplitude_servico,
+    quantile_servico[2]+3*amplitude_servico
   )
 )
 ```
