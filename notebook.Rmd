@@ -77,6 +77,7 @@ par(mfrow=c(1,2))
 hist(dataframe_tempos$chegada, main = "Histograma: tempos de chegada", xlab = "Tempo de chegada", ylab = "Frequência", col = "blue")
 hist(dataframe_tempos$servico, main = "Histograma: tempos de serviço", xlab = "Tempo de serviço", ylab = "Frequência", col = "red")
 ```
+### Utilizando os histogramas gerados podemos observar que os dados de chegada seguem uma distribuição normal, já o tempo de seviço é uma distribuição uniforme
 
 ## Correlação
 ```{r}
