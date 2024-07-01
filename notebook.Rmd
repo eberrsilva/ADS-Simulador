@@ -90,50 +90,73 @@ corrplot(cor(dataframe_tempos), method = "number")
 # Criando funções
 ## Simulador Computacional
 ```{r}
-simulador_computacional <- function(dados, qtde_atendentes, qtde_simulacoes) {
+simulador_computacional <- function(dados, qtde_atendentes) {
   fila <- data.frame()
   atendidos <- 0
   qtde_chegadas <- 0
   unidade_tempo <- 0
+  tempo_total_da_fila_ocupada <- 0
   tempo_total_na_fila <- 0
-  atendentes <- data.frame(disponivel = rep(TRUE, 2), tempo_servico = rep(0, qtde_atendentes), tempo_atendimento = rep(0, qtde_atendentes))
+  tamanho_max_fila <- 0
+  tempo_max_fila <- 0
+  tempo_atendente_ocioso <- 0
+  atendentes <- data.frame(disponivel = rep(TRUE, qtde_atendentes), tempo_servico = rep(0, qtde_atendentes), tempo_atendimento = rep(0, qtde_atendentes))
 
   dados$soma_chegada <- cumsum(dados$chegada)
 
-  for (i in 1:qtde_simulacoes) {
-    while (atendidos < nrow(dados)) {
-      while (!is.na(dados$soma_chegada[qtde_chegadas + 1]) && dados$soma_chegada[qtde_chegadas + 1] == unidade_tempo) {
-        fila <- rbind(fila, dados[qtde_chegadas + 1, ])
-        qtde_chegadas <- qtde_chegadas + 1
-      }
+  while (atendidos < nrow(dados)) {
+    while (!is.na(dados$soma_chegada[qtde_chegadas + 1]) && dados$soma_chegada[qtde_chegadas + 1] == unidade_tempo) {
+      fila <- rbind(fila, dados[qtde_chegadas + 1,])
+      qtde_chegadas <- qtde_chegadas + 1
+    }
 
-      for (j in 1:qtde_atendentes) {
-        if (atendentes$disponivel[j]) {
-          if (nrow(fila) > 0) {
-            atendentes$tempo_servico[j] <- fila$servico[1]
-            atendentes$disponivel[j] <- FALSE
-            atendentes$tempo_atendimento[j] <- 0
-            tempo_total_na_fila <- tempo_total_na_fila + (unidade_tempo - fila$soma_chegada[1])
-            fila <- fila[-1, ]
+    if (nrow(fila) > 0) {
+      tempo_total_da_fila_ocupada <- tempo_total_da_fila_ocupada + 1
+      fila
+    }
+
+    if (nrow(fila) > tamanho_max_fila) {
+      tamanho_max_fila <- nrow(fila)
+    }
+
+    for (j in 1:qtde_atendentes) {
+      if (atendentes$disponivel[j]) {
+        if (nrow(fila) > 0) {
+          atendentes$tempo_servico[j] <- fila$servico[1]
+          atendentes$disponivel[j] <- FALSE
+          atendentes$tempo_atendimento[j] <- 0
+          tempo_total_na_fila <- tempo_total_na_fila + (unidade_tempo - fila$soma_chegada[1])
+          if ((unidade_tempo - fila$soma_chegada[1]) > tempo_max_fila) {
+            tempo_max_fila <- unidade_tempo - fila$soma_chegada[1]
           }
+          fila <- fila[-1,]
         } else {
-          atendentes$tempo_atendimento[j] <- atendentes$tempo_atendimento[j] + 1
-          if (atendentes$tempo_atendimento[j] == atendentes$tempo_servico[j]){
-            atendidos <- atendidos + 1
-            atendentes$disponivel[j] <- TRUE
-          }
+          tempo_atendente_ocioso <- tempo_atendente_ocioso + 1
+        }
+      } else {
+        atendentes$tempo_atendimento[j] <- atendentes$tempo_atendimento[j] + 1
+        if (atendentes$tempo_atendimento[j] == atendentes$tempo_servico[j]) {
+          atendidos <- atendidos + 1
+          atendentes$disponivel[j] <- TRUE
         }
       }
-
-      unidade_tempo <- unidade_tempo + 1
     }
+
+    unidade_tempo <- unidade_tempo + 1
   }
 
   return(data.frame(
     atendidos = atendidos,
     qtde_chegadas = qtde_chegadas,
-    unidade_tempo = unidade_tempo,
-    media_fila = tempo_total_na_fila / qtde_chegadas
+    qtde_atendentes = qtde_atendentes,
+    tempo_total = unidade_tempo,
+    tempo_total_da_fila_ocupada = tempo_total_da_fila_ocupada,
+    tempo_max_fila = tempo_max_fila,
+    tempo_total_na_fila = tempo_total_na_fila,
+    media_na_fila = tempo_total_na_fila / qtde_chegadas,
+    tamanho_max_fila = tamanho_max_fila,
+    tempo_atendente_ocioso = tempo_atendente_ocioso,
+    tempo_atendente_ocioso_media = tempo_atendente_ocioso / qtde_atendentes
   ))
 
 }
@@ -185,7 +208,7 @@ corrplot(cor(df_numeros_aleatorios), method = "number")
 # Execução do Simulador
 ## Executando simulador com os dados originais
 ```{r}
-print(simulador_computacional(dataframe_tempos, 1, 1))
+print(simulador_computacional(dataframe_tempos, 1))
 
 ```
 
@@ -193,6 +216,13 @@ print(simulador_computacional(dataframe_tempos, 1, 1))
 ## Executando simulador com os dados aleatorios
 ```{r}
 df_numeros_aleatorios <- gerar_numeros_aleatorios(nrow(dataframe_tempos))
+df_simulados <- simulador_computacional(df_numeros_aleatorios, 1)
+df_simulados <- df_simulados[0,]
 
-simulador_computacional(df_numeros_aleatorios, 1, 1)
+df_simulados <- rbind(df_simulados, simulador_computacional(df_numeros_aleatorios, 1))
+df_simulados <- rbind(df_simulados, simulador_computacional(df_numeros_aleatorios, 2))
+df_simulados <- rbind(df_simulados,simulador_computacional(df_numeros_aleatorios, 3))
+df_simulados <- rbind(df_simulados,simulador_computacional(df_numeros_aleatorios, 4))
+
+print(df_simulados)
 ```
