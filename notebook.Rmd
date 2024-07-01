@@ -18,17 +18,36 @@ colnames(dataframe_tempos) <- c("chegada", "servico")
 dataframe_tempos$chegada <- as.numeric(dataframe_tempos$chegada)
 dataframe_tempos$servico <- as.numeric(dataframe_tempos$servico)
 summary(dataframe_tempos)
+
+colunas <- c(
+  "valor_corte",
+  "percentual_corte",
+  "qtde_minimo_atendido",
+  "algoritmo",
+  "qtde_atendentes",
+  "tempo_total",
+  "tempo_total_da_fila_ocupada",
+  "tempo_max_fila",
+  "media_na_fila",
+  "tamanho_max_fila",
+  "tempo_atendente_ocioso_media"
+)
 ```
 
+
+```{r}
+dataframe_tempos <- dataframe_tempos[-2,]
+
+```
 # Modelo de Entrada
 ## Calculando os outliers
 ```{r}
 # Outliers da chegada
-quantile_chegada <- quantile(dataframe_tempos$chegada, probs = c(.25, .75), na.rm = FALSE)
+quantile_chegada <- quantile(dataframe_tempos$chegada, probs = c(.25, .50, .75), na.rm = FALSE)
 amplitude_chegada <- max(dataframe_tempos$chegada) - min(dataframe_tempos$chegada)
 
 # Outliers da chegada
-quantile_servico <- quantile(dataframe_tempos$servico, probs = c(.25, .75), na.rm = FALSE)
+quantile_servico <- quantile(dataframe_tempos$servico, probs = c(.25, .50, .75), na.rm = FALSE)
 amplitude_servico <- max(dataframe_tempos$servico) - min(dataframe_tempos$servico)
 
 ```
@@ -47,9 +66,9 @@ df_medidas <- data.frame(
     max(dataframe_tempos$chegada),  # maximo
     amplitude_chegada,  # amplitude
     quantile_chegada[1] - 1.5 * amplitude_chegada,
-    quantile_chegada[2] + 1.5 * amplitude_chegada,
+    quantile_chegada[3] + 1.5 * amplitude_chegada,
     quantile_chegada[1] - 3 * amplitude_chegada,
-    quantile_chegada[2] + 3 * amplitude_chegada
+    quantile_chegada[3] + 3 * amplitude_chegada
   ),
   TempoServico = c(
     mean(dataframe_tempos$servico),  # média
@@ -60,9 +79,9 @@ df_medidas <- data.frame(
     max(dataframe_tempos$servico),  # maximo
     amplitude_servico,  # amplitude
     quantile_servico[1] - 1.5 * amplitude_servico,
-    quantile_servico[2] + 1.5 * amplitude_servico,
+    quantile_servico[3] + 1.5 * amplitude_servico,
     quantile_servico[1] - 3 * amplitude_servico,
-    quantile_servico[2] + 3 * amplitude_servico
+    quantile_servico[3] + 3 * amplitude_servico
   )
 )
 ```
@@ -85,7 +104,9 @@ corrplot(cor(dataframe_tempos), method = "number")
 
 ```
 # Criando funções
-## Simulador Computacional
+## Simulador Computacional quantitativo
+## Variavel: Quantidade de atendentes
+## Mode: Os atendimentos são atendidos por ordem de chegada
 ```{r}
 simulador_computacional <- function(dados, qtde_atendentes) {
   fila <- data.frame()
@@ -135,6 +156,8 @@ simulador_computacional <- function(dados, qtde_atendentes) {
         if (atendentes$tempo_atendimento[i] == atendentes$tempo_servico[i]) {
           atendidos <- atendidos + 1
           atendentes$disponivel[i] <- TRUE
+          atendentes$tempo_atendimento[i] <- 0
+          atendentes$tempo_servico[i] <- 0
         }
       }
     }
@@ -153,24 +176,140 @@ simulador_computacional <- function(dados, qtde_atendentes) {
     media_na_fila = tempo_total_na_fila / qtde_chegadas,
     tamanho_max_fila = tamanho_max_fila,
     tempo_atendente_ocioso = tempo_atendente_ocioso,
-    tempo_atendente_ocioso_media = tempo_atendente_ocioso / qtde_atendentes
+    tempo_atendente_ocioso_media = tempo_atendente_ocioso / qtde_atendentes,
+    algoritmo = NA,
+    valor_corte = NA,
+    percentual_corte = NA,
+    qtde_minimo_atendido = NA,
+    metodo = NA
+  ))
+}
+```
+
+## Simulador Computacional por prioridade
+## Variavel: Quantidade de atendentes
+## Mode: Os atendimentos são atendidos por ordem de chegada e prioridade, para cada QTDE_MINIMO_ATENDIDO chamados com tempo de serviço MENOR OU IGUAL ao VALOR_CORTE, um chamado com tempo de serviço MAIOR que VALOR_CORTE é atendido. Caso não tenha serviços na fila adequados, o primeiro da fila sera atendido.
+```{r}
+simulador_computacional_prioridade_corte <- function(dados, qtde_atendentes, valor_corte, qtde_minimo_atendido = 2) {
+  fila <- data.frame()
+  atendidos <- 0
+  qtde_chegadas <- 0
+  unidade_tempo <- 0
+  tempo_total_da_fila_ocupada <- 0
+  tempo_total_na_fila <- 0
+  tamanho_max_fila <- 0
+  tempo_max_fila <- 0
+  tempo_atendente_ocioso <- 0
+  chamados_atendidos_corte <- 0
+  atendentes <- data.frame(disponivel = rep(TRUE, qtde_atendentes), tempo_servico = rep(0, qtde_atendentes), tempo_atendimento = rep(0, qtde_atendentes))
+
+  dados$soma_chegada <- cumsum(dados$chegada)
+
+  while (atendidos < nrow(dados)) {
+    while (!is.na(dados$soma_chegada[qtde_chegadas + 1]) && dados$soma_chegada[qtde_chegadas + 1] == unidade_tempo) {
+      fila <- rbind(fila, dados[qtde_chegadas + 1,])
+      qtde_chegadas <- qtde_chegadas + 1
+    }
+
+    if (nrow(fila) > 0) {
+      tempo_total_da_fila_ocupada <- tempo_total_da_fila_ocupada + 1
+      fila
+    }
+
+    if (nrow(fila) > tamanho_max_fila) {
+      tamanho_max_fila <- nrow(fila)
+    }
+
+    for (i in 1:qtde_atendentes) {
+      if (atendentes$disponivel[i]) {
+        if (nrow(fila) > 0) {
+          indice <- 1
+          if (chamados_atendidos_corte < qtde_minimo_atendido) {
+            for (j in seq_len(nrow(fila))) {
+              if (fila$servico[j] <= valor_corte) {
+                indice <- j
+                chamados_atendidos_corte <- chamados_atendidos_corte + 1
+                break
+              }
+            }
+          } else {
+            for (j in seq_len(nrow(fila))) {
+              if (fila$servico[j] >= valor_corte) {
+                indice <- j
+                chamados_atendidos_corte <- 0
+                break
+              }
+            }
+          }
+
+          atendentes$tempo_servico[i] <- fila$servico[indice]
+          atendentes$tempo_servico[i] <- fila$servico[indice]
+          atendentes$disponivel[i] <- FALSE
+          atendentes$tempo_atendimento[i] <- 0
+          tempo_total_na_fila <- tempo_total_na_fila + (unidade_tempo - fila$soma_chegada[indice])
+          if ((unidade_tempo - fila$soma_chegada[indice]) > tempo_max_fila) {
+            tempo_max_fila <- unidade_tempo - fila$soma_chegada[indice]
+          }
+          fila <- fila[-indice,]
+        } else {
+          tempo_atendente_ocioso <- tempo_atendente_ocioso + 1
+        }
+      } else {
+        atendentes$tempo_atendimento[i] <- atendentes$tempo_atendimento[i] + 1
+        if (atendentes$tempo_atendimento[i] == atendentes$tempo_servico[i]) {
+          atendidos <- atendidos + 1
+          atendentes$disponivel[i] <- TRUE
+          atendentes$tempo_atendimento[i] <- 0
+          atendentes$tempo_servico[i] <- 0
+        }
+      }
+    }
+
+    unidade_tempo <- unidade_tempo + 1
+  }
+
+  return(data.frame(
+    atendidos = atendidos,
+    qtde_chegadas = qtde_chegadas,
+    qtde_atendentes = qtde_atendentes,
+    tempo_total = unidade_tempo,
+    tempo_total_da_fila_ocupada = tempo_total_da_fila_ocupada,
+    tempo_max_fila = tempo_max_fila,
+    tempo_total_na_fila = tempo_total_na_fila,
+    media_na_fila = tempo_total_na_fila / qtde_chegadas,
+    tamanho_max_fila = tamanho_max_fila,
+    tempo_atendente_ocioso = tempo_atendente_ocioso,
+    tempo_atendente_ocioso_media = tempo_atendente_ocioso / qtde_atendentes,
+    algoritmo = NA,
+    valor_corte = NA,
+    percentual_corte = NA,
+    qtde_minimo_atendido = NA,
+    metodo = NA
   ))
 }
 ```
 
 ## Simulador com for i
 ```{r}
-simulador_computacional_iteracao <- function(qtde_atendentes = 1, qtde_iteracao = 1, mode = "mean") {
+simulador_computacional_iteracao <- function(qtde_atendentes, qtde_iteracao, valor_corte = NA, percentual_corte = NA, qtde_minimo_atendido = 2, m = "median") {
   # Criando df com dados aleatórios e limpado-o, necessário para reutizar o método varias vezes sem
   # ter problemas com resido de dados no contexto
   df_simulados_temp <- rbind(simulador_computacional(gerar_numeros_aleatorios(nrow(dataframe_tempos)), qtde_atendentes))
   df_simulados_temp <- df_simulados_temp[0,]
 
   for (i in 1:qtde_iteracao) {
-    df_simulados_temp <- rbind(df_simulados_temp, simulador_computacional(gerar_numeros_aleatorios(nrow(dataframe_tempos)), qtde_atendentes))
+    if (!is.na(valor_corte)) {
+      df_simulados_temp <- rbind(df_simulados_temp, simulador_computacional_prioridade_corte(gerar_numeros_aleatorios(nrow(dataframe_tempos)), qtde_atendentes, valor_corte, qtde_minimo_atendido))
+    } else if (!is.na(percentual_corte)) {
+      temp <- gerar_numeros_aleatorios(nrow(dataframe_tempos))
+      valor_corte <- quantile(temp$servico, probs = c(percentual_corte), na.rm = FALSE)
+      df_simulados_temp <- rbind(df_simulados_temp, simulador_computacional_prioridade_corte(temp, qtde_atendentes, valor_corte, qtde_minimo_atendido))
+    } else {
+      df_simulados_temp <- rbind(df_simulados_temp, simulador_computacional(gerar_numeros_aleatorios(nrow(dataframe_tempos)), qtde_atendentes))
+    }
   }
 
-  if (mode == "mean") {
+  if (m == "mean") {
     df_simulados_temp$metodo <- as.factor("mean")
     df_simulados_temp$atendidos <- mean(df_simulados_temp$atendidos)
     df_simulados_temp$qtde_chegadas <- mean(df_simulados_temp$qtde_chegadas)
@@ -183,7 +322,7 @@ simulador_computacional_iteracao <- function(qtde_atendentes = 1, qtde_iteracao 
     df_simulados_temp$tamanho_max_fila <- mean(df_simulados_temp$tamanho_max_fila)
     df_simulados_temp$tempo_atendente_ocioso <- mean(df_simulados_temp$tempo_atendente_ocioso)
     df_simulados_temp$tempo_atendente_ocioso_media <- mean(df_simulados_temp$tempo_atendente_ocioso_media)
-  } else if (mode == "median") {
+  } else if (m == "median") {
     df_simulados_temp$metodo <- as.factor("median")
     df_simulados_temp$atendidos <- median(df_simulados_temp$atendidos)
     df_simulados_temp$qtde_chegadas <- median(df_simulados_temp$qtde_chegadas)
@@ -197,6 +336,17 @@ simulador_computacional_iteracao <- function(qtde_atendentes = 1, qtde_iteracao 
     df_simulados_temp$tempo_atendente_ocioso <- median(df_simulados_temp$tempo_atendente_ocioso)
     df_simulados_temp$tempo_atendente_ocioso_media <- median(df_simulados_temp$tempo_atendente_ocioso_media)
   }
+
+  if (!is.na(valor_corte)) {
+    df_simulados_temp$algoritmo <- as.factor("Chegada + Prioridade")
+  } else {
+    df_simulados_temp$algoritmo <- as.factor("Chegada")
+  }
+
+  df_simulados_temp$valor_corte <- valor_corte
+  df_simulados_temp$percentual_corte <- percentual_corte
+  df_simulados_temp$qtde_minimo_atendido <- qtde_minimo_atendido
+
   return(df_simulados_temp[1,])
 }
 
@@ -237,16 +387,18 @@ hist(df_numeros_aleatorios$servico, main = "Histograma: tempos de serviço", xla
 ## Correlação
 ```{r}
 pairs(df_numeros_aleatorios)
+corrplot(cor(df_numeros_aleatorios), method = "number")
 acf(df_numeros_aleatorios$chegada, pl = TRUE)
 acf(df_numeros_aleatorios$servico, pl = TRUE)
-corrplot(cor(df_numeros_aleatorios), method = "number")
 
 ```
 
 # Execução do Simulador
 ## Executando simulador com os dados originais
 ```{r}
-print(simulador_computacional(dataframe_tempos, 1))
+df_simulado_original <- simulador_computacional(dataframe_tempos, 1)[, colunas]
+
+print(df_simulado_original)
 
 ```
 
@@ -257,21 +409,41 @@ print(simulador_computacional(dataframe_tempos, 1))
 df_simulados <- simulador_computacional(gerar_numeros_aleatorios(nrow(dataframe_tempos)), 1)
 df_simulados <- df_simulados[0,]
 qtde_atendentes <- 7
+qtde_iteracao <- 3
 
-# for (i in 1:qtde_atendentes) {
-#   df_simulados <- rbind(df_simulados, simulador_computacional_iteracao(i, 10, "mean"))
-# }
 for (i in 1:qtde_atendentes) {
-  df_simulados <- rbind(df_simulados, simulador_computacional_iteracao(i, 10, "median"))
+  df_simulados <- rbind(df_simulados, simulador_computacional_iteracao(i, qtde_iteracao))
+}
+
+for (i in 1:qtde_atendentes) {
+  df_simulados <- rbind(df_simulados, simulador_computacional_iteracao(i, qtde_iteracao, percentual_corte = .25, qtde_minimo_atendido = 2))
+}
+for (i in 1:qtde_atendentes) {
+  df_simulados <- rbind(df_simulados, simulador_computacional_iteracao(i, qtde_iteracao, percentual_corte = .50, qtde_minimo_atendido = 4))
+}
+for (i in 1:qtde_atendentes) {
+  df_simulados <- rbind(df_simulados, simulador_computacional_iteracao(i, qtde_iteracao, percentual_corte = .50, qtde_minimo_atendido = 2))
+}
+for (i in 1:qtde_atendentes) {
+  df_simulados <- rbind(df_simulados, simulador_computacional_iteracao(i, qtde_iteracao, percentual_corte = .15, qtde_minimo_atendido = 3))
 }
 
 print(df_simulados)
 ```
 
 # Analisando resultados das simulações
+```{r}
+
+# 1,2,7,12,11
+df_simulados_analise <- df_simulados[,colunas]
+```
 ## Correlação
 ```{r}
 pairs(df_simulados[, c(3:11)])
 corrplot(cor(df_simulados[, c(3:11)]), method = "number")
+
+```
+
+```{r}
 
 ```
