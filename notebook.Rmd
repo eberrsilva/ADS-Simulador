@@ -4,8 +4,6 @@
 library(ggplot2)
 # install.packages("corrplot")
 library(corrplot)
-# load tseries module
-library(tseries)
 ```
 
 # Preparar dados
@@ -70,7 +68,6 @@ df_medidas <- data.frame(
 ```
 #### Com o dataframe é possível identificar que o dataset não possui outliers.
 
-
 ## Histograma
 ```{r}
 par(mfrow = c(1, 2))
@@ -119,12 +116,12 @@ simulador_computacional <- function(dados, qtde_atendentes) {
       tamanho_max_fila <- nrow(fila)
     }
 
-    for (j in 1:qtde_atendentes) {
-      if (atendentes$disponivel[j]) {
+    for (i in 1:qtde_atendentes) {
+      if (atendentes$disponivel[i]) {
         if (nrow(fila) > 0) {
-          atendentes$tempo_servico[j] <- fila$servico[1]
-          atendentes$disponivel[j] <- FALSE
-          atendentes$tempo_atendimento[j] <- 0
+          atendentes$tempo_servico[i] <- fila$servico[1]
+          atendentes$disponivel[i] <- FALSE
+          atendentes$tempo_atendimento[i] <- 0
           tempo_total_na_fila <- tempo_total_na_fila + (unidade_tempo - fila$soma_chegada[1])
           if ((unidade_tempo - fila$soma_chegada[1]) > tempo_max_fila) {
             tempo_max_fila <- unidade_tempo - fila$soma_chegada[1]
@@ -134,10 +131,10 @@ simulador_computacional <- function(dados, qtde_atendentes) {
           tempo_atendente_ocioso <- tempo_atendente_ocioso + 1
         }
       } else {
-        atendentes$tempo_atendimento[j] <- atendentes$tempo_atendimento[j] + 1
-        if (atendentes$tempo_atendimento[j] == atendentes$tempo_servico[j]) {
+        atendentes$tempo_atendimento[i] <- atendentes$tempo_atendimento[i] + 1
+        if (atendentes$tempo_atendimento[i] == atendentes$tempo_servico[i]) {
           atendidos <- atendidos + 1
-          atendentes$disponivel[j] <- TRUE
+          atendentes$disponivel[i] <- TRUE
         }
       }
     }
@@ -158,7 +155,49 @@ simulador_computacional <- function(dados, qtde_atendentes) {
     tempo_atendente_ocioso = tempo_atendente_ocioso,
     tempo_atendente_ocioso_media = tempo_atendente_ocioso / qtde_atendentes
   ))
+}
+```
 
+## Simulador com for i
+```{r}
+simulador_computacional_iteracao <- function(qtde_atendentes = 1, qtde_iteracao = 1, mode = "mean") {
+  # Criando df com dados aleatórios e limpado-o, necessário para reutizar o método varias vezes sem
+  # ter problemas com resido de dados no contexto
+  df_simulados_temp <- rbind(simulador_computacional(gerar_numeros_aleatorios(nrow(dataframe_tempos)), qtde_atendentes))
+  df_simulados_temp <- df_simulados_temp[0,]
+
+  for (i in 1:qtde_iteracao) {
+    df_simulados_temp <- rbind(df_simulados_temp, simulador_computacional(gerar_numeros_aleatorios(nrow(dataframe_tempos)), qtde_atendentes))
+  }
+
+  if (mode == "mean") {
+    df_simulados_temp$metodo <- as.factor("mean")
+    df_simulados_temp$atendidos <- mean(df_simulados_temp$atendidos)
+    df_simulados_temp$qtde_chegadas <- mean(df_simulados_temp$qtde_chegadas)
+    df_simulados_temp$qtde_atendentes <- mean(df_simulados_temp$qtde_atendentes)
+    df_simulados_temp$tempo_total <- mean(df_simulados_temp$tempo_total)
+    df_simulados_temp$tempo_total_da_fila_ocupada <- mean(df_simulados_temp$tempo_total_da_fila_ocupada)
+    df_simulados_temp$tempo_max_fila <- mean(df_simulados_temp$tempo_max_fila)
+    df_simulados_temp$tempo_total_na_fila <- mean(df_simulados_temp$tempo_total_na_fila)
+    df_simulados_temp$media_na_fila <- mean(df_simulados_temp$media_na_fila)
+    df_simulados_temp$tamanho_max_fila <- mean(df_simulados_temp$tamanho_max_fila)
+    df_simulados_temp$tempo_atendente_ocioso <- mean(df_simulados_temp$tempo_atendente_ocioso)
+    df_simulados_temp$tempo_atendente_ocioso_media <- mean(df_simulados_temp$tempo_atendente_ocioso_media)
+  } else if (mode == "median") {
+    df_simulados_temp$metodo <- as.factor("median")
+    df_simulados_temp$atendidos <- median(df_simulados_temp$atendidos)
+    df_simulados_temp$qtde_chegadas <- median(df_simulados_temp$qtde_chegadas)
+    df_simulados_temp$qtde_atendentes <- median(df_simulados_temp$qtde_atendentes)
+    df_simulados_temp$tempo_total <- median(df_simulados_temp$tempo_total)
+    df_simulados_temp$tempo_total_da_fila_ocupada <- median(df_simulados_temp$tempo_total_da_fila_ocupada)
+    df_simulados_temp$tempo_max_fila <- median(df_simulados_temp$tempo_max_fila)
+    df_simulados_temp$tempo_total_na_fila <- median(df_simulados_temp$tempo_total_na_fila)
+    df_simulados_temp$media_na_fila <- median(df_simulados_temp$media_na_fila)
+    df_simulados_temp$tamanho_max_fila <- median(df_simulados_temp$tamanho_max_fila)
+    df_simulados_temp$tempo_atendente_ocioso <- median(df_simulados_temp$tempo_atendente_ocioso)
+    df_simulados_temp$tempo_atendente_ocioso_media <- median(df_simulados_temp$tempo_atendente_ocioso_media)
+  }
+  return(df_simulados_temp[1,])
 }
 
 ```
@@ -204,7 +243,6 @@ corrplot(cor(df_numeros_aleatorios), method = "number")
 
 ```
 
-
 # Execução do Simulador
 ## Executando simulador com os dados originais
 ```{r}
@@ -212,20 +250,20 @@ print(simulador_computacional(dataframe_tempos, 1))
 
 ```
 
-
 ## Executando simulador com os dados aleatorios
 ```{r}
-df_numeros_aleatorios <- gerar_numeros_aleatorios(nrow(dataframe_tempos))
-df_simulados <- simulador_computacional(df_numeros_aleatorios, 1)
+# Criando df com dados aleatórios e limpado-o, necessário para reutizar o método varias vezes sem
+# ter problemas com resido de dados no contexto
+df_simulados <- simulador_computacional(gerar_numeros_aleatorios(nrow(dataframe_tempos)), 1)
 df_simulados <- df_simulados[0,]
+qtde_atendentes <- 7
 
-df_simulados <- rbind(df_simulados, simulador_computacional(df_numeros_aleatorios, 1))
-df_simulados <- rbind(df_simulados, simulador_computacional(df_numeros_aleatorios, 2))
-df_simulados <- rbind(df_simulados,simulador_computacional(df_numeros_aleatorios, 3))
-df_simulados <- rbind(df_simulados,simulador_computacional(df_numeros_aleatorios, 4))
-df_simulados <- rbind(df_simulados,simulador_computacional(df_numeros_aleatorios, 5))
-df_simulados <- rbind(df_simulados,simulador_computacional(df_numeros_aleatorios, 6))
-df_simulados <- rbind(df_simulados,simulador_computacional(df_numeros_aleatorios, 7))
+# for (i in 1:qtde_atendentes) {
+#   df_simulados <- rbind(df_simulados, simulador_computacional_iteracao(i, 10, "mean"))
+# }
+for (i in 1:qtde_atendentes) {
+  df_simulados <- rbind(df_simulados, simulador_computacional_iteracao(i, 10, "median"))
+}
 
 print(df_simulados)
 ```
