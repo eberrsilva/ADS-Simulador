@@ -267,3 +267,11 @@ for (i in 1:qtde_atendentes) {
 
 print(df_simulados)
 ```
+
+# Analisando resultados das simulações
+## Correlação
+```{r}
+pairs(df_simulados[, c(3:11)])
+corrplot(cor(df_simulados[, c(3:11)]), method = "number")
+
+```
