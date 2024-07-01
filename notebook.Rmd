@@ -26,11 +26,11 @@ summary(dataframe_tempos)
 ## Calculando os outliers
 ```{r}
 # Outliers da chegada
-quantile_chegada <- quantile(dataframe_tempos$chegada, probs=c(.25, .75), na.rm = FALSE)
+quantile_chegada <- quantile(dataframe_tempos$chegada, probs = c(.25, .75), na.rm = FALSE)
 amplitude_chegada <- max(dataframe_tempos$chegada) - min(dataframe_tempos$chegada)
 
 # Outliers da chegada
-quantile_servico <- quantile(dataframe_tempos$servico, probs=c(.25, .75), na.rm = FALSE)
+quantile_servico <- quantile(dataframe_tempos$servico, probs = c(.25, .75), na.rm = FALSE)
 amplitude_servico <- max(dataframe_tempos$servico) - min(dataframe_tempos$servico)
 
 ```
@@ -48,10 +48,10 @@ df_medidas <- data.frame(
     min(dataframe_tempos$chegada),  # minimo
     max(dataframe_tempos$chegada),  # maximo
     amplitude_chegada,  # amplitude
-    quantile_chegada[1]-1.5*amplitude_chegada,
-    quantile_chegada[2]+1.5*amplitude_chegada,
-    quantile_chegada[1]-3*amplitude_chegada,
-    quantile_chegada[2]+3*amplitude_chegada
+    quantile_chegada[1] - 1.5 * amplitude_chegada,
+    quantile_chegada[2] + 1.5 * amplitude_chegada,
+    quantile_chegada[1] - 3 * amplitude_chegada,
+    quantile_chegada[2] + 3 * amplitude_chegada
   ),
   TempoServico = c(
     mean(dataframe_tempos$servico),  # média
@@ -61,10 +61,10 @@ df_medidas <- data.frame(
     min(dataframe_tempos$servico),  # minimo
     max(dataframe_tempos$servico),  # maximo
     amplitude_servico,  # amplitude
-    quantile_servico[1]-1.5*amplitude_servico,
-    quantile_servico[2]+1.5*amplitude_servico,
-    quantile_servico[1]-3*amplitude_servico,
-    quantile_servico[2]+3*amplitude_servico
+    quantile_servico[1] - 1.5 * amplitude_servico,
+    quantile_servico[2] + 1.5 * amplitude_servico,
+    quantile_servico[1] - 3 * amplitude_servico,
+    quantile_servico[2] + 3 * amplitude_servico
   )
 )
 ```
@@ -73,7 +73,7 @@ df_medidas <- data.frame(
 
 ## Histograma
 ```{r}
-par(mfrow=c(1,2))
+par(mfrow = c(1, 2))
 hist(dataframe_tempos$chegada, main = "Histograma: tempos de chegada", xlab = "Tempo de chegada", ylab = "Frequência", col = "blue")
 hist(dataframe_tempos$servico, main = "Histograma: tempos de serviço", xlab = "Tempo de serviço", ylab = "Frequência", col = "red")
 ```
@@ -82,8 +82,8 @@ hist(dataframe_tempos$servico, main = "Histograma: tempos de serviço", xlab = "
 ## Correlação
 ```{r}
 pairs(dataframe_tempos)
-acf(dataframe_tempos$chegada,pl=TRUE)
-acf(dataframe_tempos$servico,pl=TRUE)
+acf(dataframe_tempos$chegada, pl = TRUE)
+acf(dataframe_tempos$servico, pl = TRUE)
 corrplot(cor(dataframe_tempos), method = "number")
 
 ```
@@ -154,8 +154,8 @@ gerar_numeros_aleatorios <- function(n) {
   servico <- ifelse(servico < 0.5, 0, servico)
 
   # Truncar os valores gerados
-  chegada <- as.integer(trunc(chegada, prec=0))
-  servico <- as.integer(trunc(servico, prec=0))
+  chegada <- as.integer(trunc(chegada, prec = 0))
+  servico <- as.integer(trunc(servico, prec = 0))
 
   return(data.frame(chegada, servico))
 }
@@ -166,7 +166,7 @@ gerar_numeros_aleatorios <- function(n) {
 ```{r}
 df_numeros_aleatorios <- gerar_numeros_aleatorios(nrow(dataframe_tempos))
 
-par(mfrow=c(1,2))
+par(mfrow = c(1, 2))
 hist(df_numeros_aleatorios$chegada, main = "Histograma: tempos de chegada", xlab = "Tempo de chegada", ylab = "Frequência", col = "blue")
 hist(df_numeros_aleatorios$servico, main = "Histograma: tempos de serviço", xlab = "Tempo de serviço", ylab = "Frequência", col = "red")
 ```
@@ -175,8 +175,8 @@ hist(df_numeros_aleatorios$servico, main = "Histograma: tempos de serviço", xla
 ## Correlação
 ```{r}
 pairs(df_numeros_aleatorios)
-acf(df_numeros_aleatorios$chegada,pl=TRUE)
-acf(df_numeros_aleatorios$servico,pl=TRUE)
+acf(df_numeros_aleatorios$chegada, pl = TRUE)
+acf(df_numeros_aleatorios$servico, pl = TRUE)
 corrplot(cor(df_numeros_aleatorios), method = "number")
 
 ```
