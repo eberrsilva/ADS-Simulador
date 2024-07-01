@@ -223,6 +223,9 @@ df_simulados <- rbind(df_simulados, simulador_computacional(df_numeros_aleatorio
 df_simulados <- rbind(df_simulados, simulador_computacional(df_numeros_aleatorios, 2))
 df_simulados <- rbind(df_simulados,simulador_computacional(df_numeros_aleatorios, 3))
 df_simulados <- rbind(df_simulados,simulador_computacional(df_numeros_aleatorios, 4))
+df_simulados <- rbind(df_simulados,simulador_computacional(df_numeros_aleatorios, 5))
+df_simulados <- rbind(df_simulados,simulador_computacional(df_numeros_aleatorios, 6))
+df_simulados <- rbind(df_simulados,simulador_computacional(df_numeros_aleatorios, 7))
 
 print(df_simulados)
 ```
