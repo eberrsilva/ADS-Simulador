@@ -464,11 +464,6 @@ for (i in 1:qtde_atendentes) {
 
 # Analisando resultados das simulações
 ```{r}
-df_simulados_analise <- df_simulados[,colunas]
-```
-
-```{r}
-# hist(df_simulados_analise$tempo_max_fila, main = "Histograma: tempos de chegada", xlab = "Tempo de chegada", ylab = "Frequência", col = "blue")
 colunas2 <- c(
   "qtde_atendentes",
   "tempo_total",
@@ -479,8 +474,7 @@ colunas2 <- c(
   "tempo_atendente_ocioso_media"
 )
 
-df_todos_simulado <- rbind(df_simulado_original, df_simulados_analise)
-data_grafico <- df_todos_simulado[, colunas2]
+data_grafico <- rbind(df_simulado_original, df_simulados[,colunas])[, colunas2]
 
 ```
 
@@ -529,21 +523,58 @@ ggplot(data_grafico[data_grafico$qtde_atendentes == 1,], aes(x=tamanho_max_fila,
   geom_point(aes(col=row.names(data_grafico[data_grafico$qtde_atendentes == 1,])), size=2) +
   geom_label(
     label=rownames(data_grafico[data_grafico$qtde_atendentes == 1,]),
-    nudge_x = 0.25, nudge_y = 0.25)
+    nudge_x = 1, nudge_y = 1)
 
 ggplot(data_grafico[data_grafico$qtde_atendentes == 2,], aes(x=tamanho_max_fila, y=tempo_max_fila)) +
   geom_point(aes(col=row.names(data_grafico[data_grafico$qtde_atendentes == 2,])), size=2) +
   geom_label(
     label=rownames(data_grafico[data_grafico$qtde_atendentes == 3,]),
-    nudge_x = 0.25, nudge_y = 0.25
-  )
+    nudge_x = 0.85, nudge_y = 2)
 
 ggplot(data_grafico[data_grafico$qtde_atendentes == 3,], aes(x=tamanho_max_fila, y=tempo_max_fila)) +
   geom_point(aes(col=row.names(data_grafico[data_grafico$qtde_atendentes == 3,])), size=2) +
   geom_label(
     label=rownames(data_grafico[data_grafico$qtde_atendentes == 3,]),
-    nudge_x = 0.25, nudge_y = 0.25)
+    nudge_x = 0.14, nudge_y = 0.4)
 ```
+### Gerando tabela para comparação percentual dos resultados
+```{r}
+
+df_percentual_fun <- function(dados, qtde_atendentes){
+  df_percentual <- rbind(dados[row.names(dados) == "Original",],dados[dados$qtde_atendentes == qtde_atendentes,])
+
+  df_percentual$qtde_atendentes_P <- df_percentual$qtde_atendentes*100/dados[row.names(dados) == "Original",]$qtde_atendentes
+  df_percentual$tempo_total_P <- df_percentual$tempo_total*100/dados[row.names(dados) == "Original",]$tempo_total
+  df_percentual$tempo_total_da_fila_ocupada_P <- df_percentual$tempo_total_da_fila_ocupada*100/dados[row.names(dados) == "Original",]$tempo_total_da_fila_ocupada
+  df_percentual$tempo_max_fila_P <- df_percentual$tempo_max_fila*100/dados[row.names(dados) == "Original",]$tempo_max_fila
+  df_percentual$media_na_fila_P <- df_percentual$media_na_fila*100/dados[row.names(dados) == "Original",]$media_na_fila
+  df_percentual$tamanho_max_fila_P <- df_percentual$tamanho_max_fila*100/dados[row.names(dados) == "Original",]$tamanho_max_fila
+  df_percentual$tempo_atendente_ocioso_media_P <- df_percentual$tempo_atendente_ocioso_media*100/dados[row.names(dados) == "Original",]$tempo_atendente_ocioso_media
+  df_percentual <- df_percentual[,  c(
+    "qtde_atendentes",
+    "qtde_atendentes_P",
+    "tempo_total",
+    "tempo_total_P",
+    "tempo_total_da_fila_ocupada",
+    "tempo_total_da_fila_ocupada_P",
+    "tempo_max_fila",
+    "tempo_max_fila_P",
+    "media_na_fila",
+    "media_na_fila_P",
+    "tamanho_max_fila",
+    "tamanho_max_fila_P",
+    "tempo_atendente_ocioso_media",
+    "tempo_atendente_ocioso_media_P"
+  )]
+  return(df_percentual)
+}
+
+print(df_percentual_fun(data_grafico, 1))
+print(df_percentual_fun(data_grafico, 2))
+print(df_percentual_fun(data_grafico, 3))
+
+```
+
 
 ```{r}
 
@@ -571,8 +602,8 @@ ggplot(data_grafico[data_grafico$qtde_atendentes == 3,], aes(x=tempo_atendente_o
 ```{r}
 # Grafico de rede das simulações de 1 atendente
 
-valores_minimos <- c(0, min(df_todos_simulado$tempo_total), min(df_todos_simulado$tempo_total_da_fila_ocupada), min(df_todos_simulado$tempo_max_fila), 0, 0, 0)
-valores_maximos <- c(3, max(df_todos_simulado$tempo_total), max(df_todos_simulado$tempo_total_da_fila_ocupada), max(df_todos_simulado$tempo_max_fila), max(df_todos_simulado$media_na_fila), max(df_todos_simulado$tamanho_max_fila), max(df_todos_simulado$tempo_atendente_ocioso_media))
+valores_minimos <- c(0, min(data_grafico$tempo_total), min(data_grafico$tempo_total_da_fila_ocupada), min(data_grafico$tempo_max_fila), 0, 0, 0)
+valores_maximos <- c(3, max(data_grafico$tempo_total), max(data_grafico$tempo_total_da_fila_ocupada), max(data_grafico$tempo_max_fila), max(data_grafico$media_na_fila), max(data_grafico$tamanho_max_fila), max(data_grafico$tempo_atendente_ocioso_media))
 data_grafico_spider_1 <- rbind(
   valores_minimos,
   valores_maximos,
