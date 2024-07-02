@@ -570,9 +570,12 @@ ggplot(data_grafico[data_grafico$qtde_atendentes == 3,], aes(x=tempo_atendente_o
 
 ```{r}
 # Grafico de rede das simulações de 1 atendente
+
+valores_minimos <- c(0, min(df_todos_simulado$tempo_total), min(df_todos_simulado$tempo_total_da_fila_ocupada), min(df_todos_simulado$tempo_max_fila), 0, 0, 0)
+valores_maximos <- c(3, max(df_todos_simulado$tempo_total), max(df_todos_simulado$tempo_total_da_fila_ocupada), max(df_todos_simulado$tempo_max_fila), max(df_todos_simulado$media_na_fila), max(df_todos_simulado$tamanho_max_fila), max(df_todos_simulado$tempo_atendente_ocioso_media))
 data_grafico_spider_1 <- rbind(
-  c(7, min(df_todos_simulado$tempo_total), min(df_todos_simulado$tempo_total_da_fila_ocupada), min(df_todos_simulado$tempo_max_fila), 0, 0, 0),
-  c(0, max(df_todos_simulado$tempo_total), max(df_todos_simulado$tempo_total_da_fila_ocupada), max(df_todos_simulado$tempo_max_fila), max(df_todos_simulado$media_na_fila), max(df_todos_simulado$tamanho_max_fila), max(df_todos_simulado$tempo_atendente_ocioso_media)),
+  valores_minimos,
+  valores_maximos,
   data_grafico[data_grafico$qtde_atendentes == 1,])
 
 library(RColorBrewer)
@@ -596,8 +599,8 @@ radarchart( data_grafico_spider_1  , axistype=2 ,
 
 # Grafico de rede das simulações de 2 atendente
 data_grafico_spider_2 <- rbind(
-  c(7, min(df_todos_simulado$tempo_total), min(df_todos_simulado$tempo_total_da_fila_ocupada), min(df_todos_simulado$tempo_max_fila), 0, 0, 0),
-  c(0, max(df_todos_simulado$tempo_total), max(df_todos_simulado$tempo_total_da_fila_ocupada), max(df_todos_simulado$tempo_max_fila), max(df_todos_simulado$media_na_fila), max(df_todos_simulado$tamanho_max_fila), max(df_todos_simulado$tempo_atendente_ocioso_media)),
+  valores_minimos,
+  valores_maximos,
   data_grafico[row.names(data_grafico) == "Original",],
   data_grafico[data_grafico$qtde_atendentes == 2,])
 
@@ -617,8 +620,8 @@ radarchart( data_grafico_spider_2  , axistype=2 ,
 
 # Grafico de rede das simulações de 3 atendente
 data_grafico_spider_3 <- rbind(
-  c(7, min(df_todos_simulado$tempo_total), min(df_todos_simulado$tempo_total_da_fila_ocupada), min(df_todos_simulado$tempo_max_fila), 0, 0, 0),
-  c(0, max(df_todos_simulado$tempo_total), max(df_todos_simulado$tempo_total_da_fila_ocupada), max(df_todos_simulado$tempo_max_fila), max(df_todos_simulado$media_na_fila), max(df_todos_simulado$tamanho_max_fila), max(df_todos_simulado$tempo_atendente_ocioso_media)),
+  valores_minimos,
+  valores_maximos,
   data_grafico[row.names(data_grafico) == "Original",],
   data_grafico[data_grafico$qtde_atendentes == 3,])
 
