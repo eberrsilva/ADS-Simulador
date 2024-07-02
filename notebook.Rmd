@@ -492,7 +492,9 @@ corrplot(cor(data_grafico), method = "number")
 
 ```
 ### Podemos notar uma forte correlação entre a quantidade de atendentes e o tempo ocioso
+
 ### Também podemos ver uma forte correlação entre si nas métricas da fila, mostrando que, conforme o tamanho maximo fila diminui, o tempo médio e o tempo total da fila também diminuem.
+
 ### O tempo total do atendimento também diminui conforme o tempo da fila diminui.
 
 ## Grafico relacionando o tempo total de atendimento com o tempo de ociosidade dos atendentes
@@ -503,14 +505,18 @@ ggplot(data_grafico, aes(x=tempo_atendente_ocioso_media, y=tempo_total)) +
   geom_point(aes(col=qtde_atendentes), size=2)
 ```
 ### Com o gráfico podemos observar que as simulações com 2 atendentes possuio tempo de ociosidade próximo ao minimo e um tempo de atendimento total médio
+
 ### Já as simulações com 3 atendentes apresenta os melhores resultados, possuindo um tempo de atendimento total próximo ao minimo e um tempo ocioso baixo
+
 ### Podemos notar também que com 4 ou mais atendentes o valor total do atendimento continua próximo ao minimo porém aumentando mais o tempo de ociosidade dos atendentes
 ```{r}
 ggplot(data_grafico, aes(x=tamanho_max_fila, y=tempo_max_fila)) +
   geom_point(aes(col=qtde_atendentes), size=2)
 ```
 ### Observando esse segundo grafico podemos ver que as simulações com 1 atendente possuem o tempo maximo na fila muito alto, isso cai para menos da metade com 2 atendentes.
+
 ### Já com 3 atendentes, o tempo maximo e o tamanho maximo da fila ficam próximos do minimo.
+
 ### As simulações com 4 atendentes ou novamente não apresentam ganhos significativos
 
 ## Como visto, 4 atendentes ou mais não apresentam ganhos, sendo assim iremos desconsidera-los da para frente
