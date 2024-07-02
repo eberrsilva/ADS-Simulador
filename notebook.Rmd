@@ -4,6 +4,12 @@
 library(ggplot2)
 # install.packages("corrplot")
 library(corrplot)
+# install.packages("fmsb")
+library(fmsb)
+# install.packages("ggplot2")
+library(ggplot2)
+# install.packages("dplyr")
+library(dplyr)
 ```
 
 # Preparar dados
@@ -34,11 +40,6 @@ colunas <- c(
 )
 ```
 
-
-```{r}
-dataframe_tempos <- dataframe_tempos[-2,]
-
-```
 # Modelo de Entrada
 ## Calculando os outliers
 ```{r}
@@ -291,16 +292,14 @@ simulador_computacional_prioridade_corte <- function(dados, qtde_atendentes, val
 
 ## Simulador com for i
 ```{r}
-simulador_computacional_iteracao <- function(qtde_atendentes, qtde_iteracao, valor_corte = NA, percentual_corte = NA, qtde_minimo_atendido = 2, m = "median") {
+simulador_computacional_iteracao <- function(qtde_atendentes, qtde_iteracao, percentual_corte = NA, qtde_minimo_atendido = 2, m = "median") {
   # Criando df com dados aleatórios e limpado-o, necessário para reutizar o método varias vezes sem
   # ter problemas com resido de dados no contexto
   df_simulados_temp <- rbind(simulador_computacional(gerar_numeros_aleatorios(nrow(dataframe_tempos)), qtde_atendentes))
   df_simulados_temp <- df_simulados_temp[0,]
 
   for (i in 1:qtde_iteracao) {
-    if (!is.na(valor_corte)) {
-      df_simulados_temp <- rbind(df_simulados_temp, simulador_computacional_prioridade_corte(gerar_numeros_aleatorios(nrow(dataframe_tempos)), qtde_atendentes, valor_corte, qtde_minimo_atendido))
-    } else if (!is.na(percentual_corte)) {
+    if (!is.na(percentual_corte)) {
       temp <- gerar_numeros_aleatorios(nrow(dataframe_tempos))
       valor_corte <- quantile(temp$servico, probs = c(percentual_corte), na.rm = FALSE)
       df_simulados_temp <- rbind(df_simulados_temp, simulador_computacional_prioridade_corte(temp, qtde_atendentes, valor_corte, qtde_minimo_atendido))
@@ -337,17 +336,18 @@ simulador_computacional_iteracao <- function(qtde_atendentes, qtde_iteracao, val
     df_simulados_temp$tempo_atendente_ocioso_media <- median(df_simulados_temp$tempo_atendente_ocioso_media)
   }
 
-  if (!is.na(valor_corte)) {
+  if (!is.na(percentual_corte)) {
     df_simulados_temp$algoritmo <- as.factor("Chegada + Prioridade")
   } else {
     df_simulados_temp$algoritmo <- as.factor("Chegada")
   }
 
-  df_simulados_temp$valor_corte <- valor_corte
   df_simulados_temp$percentual_corte <- percentual_corte
   df_simulados_temp$qtde_minimo_atendido <- qtde_minimo_atendido
 
-  return(df_simulados_temp[1,])
+  df_simulados_temp <- df_simulados_temp[1,]
+  rownames(df_simulados_temp) <- paste(df_simulados_temp$algoritmo, df_simulados_temp$percentual_corte, df_simulados_temp$qtde_minimo_atendido, df_simulados_temp$qtde_atendentes, sep="-")
+  return(df_simulados_temp)
 }
 
 ```
@@ -397,6 +397,7 @@ acf(df_numeros_aleatorios$servico, pl = TRUE)
 ## Executando simulador com os dados originais
 ```{r}
 df_simulado_original <- simulador_computacional(dataframe_tempos, 1)[, colunas]
+rownames(df_simulado_original) <- "Original"
 
 print(df_simulado_original)
 
@@ -416,16 +417,40 @@ for (i in 1:qtde_atendentes) {
 }
 
 for (i in 1:qtde_atendentes) {
+  df_simulados <- rbind(df_simulados, simulador_computacional_iteracao(i, qtde_iteracao, percentual_corte = .10, qtde_minimo_atendido = 2))
+}
+for (i in 1:qtde_atendentes) {
+  df_simulados <- rbind(df_simulados, simulador_computacional_iteracao(i, qtde_iteracao, percentual_corte = .10, qtde_minimo_atendido = 3))
+}
+for (i in 1:qtde_atendentes) {
+  df_simulados <- rbind(df_simulados, simulador_computacional_iteracao(i, qtde_iteracao, percentual_corte = .10, qtde_minimo_atendido = 4))
+}
+for (i in 1:qtde_atendentes) {
+  df_simulados <- rbind(df_simulados, simulador_computacional_iteracao(i, qtde_iteracao, percentual_corte = .15, qtde_minimo_atendido = 2))
+}
+for (i in 1:qtde_atendentes) {
+  df_simulados <- rbind(df_simulados, simulador_computacional_iteracao(i, qtde_iteracao, percentual_corte = .15, qtde_minimo_atendido = 3))
+}
+for (i in 1:qtde_atendentes) {
+  df_simulados <- rbind(df_simulados, simulador_computacional_iteracao(i, qtde_iteracao, percentual_corte = .15, qtde_minimo_atendido = 4))
+}
+for (i in 1:qtde_atendentes) {
   df_simulados <- rbind(df_simulados, simulador_computacional_iteracao(i, qtde_iteracao, percentual_corte = .25, qtde_minimo_atendido = 2))
 }
 for (i in 1:qtde_atendentes) {
-  df_simulados <- rbind(df_simulados, simulador_computacional_iteracao(i, qtde_iteracao, percentual_corte = .50, qtde_minimo_atendido = 4))
+  df_simulados <- rbind(df_simulados, simulador_computacional_iteracao(i, qtde_iteracao, percentual_corte = .25, qtde_minimo_atendido = 3))
+}
+for (i in 1:qtde_atendentes) {
+  df_simulados <- rbind(df_simulados, simulador_computacional_iteracao(i, qtde_iteracao, percentual_corte = .25, qtde_minimo_atendido = 4))
 }
 for (i in 1:qtde_atendentes) {
   df_simulados <- rbind(df_simulados, simulador_computacional_iteracao(i, qtde_iteracao, percentual_corte = .50, qtde_minimo_atendido = 2))
 }
 for (i in 1:qtde_atendentes) {
-  df_simulados <- rbind(df_simulados, simulador_computacional_iteracao(i, qtde_iteracao, percentual_corte = .15, qtde_minimo_atendido = 3))
+  df_simulados <- rbind(df_simulados, simulador_computacional_iteracao(i, qtde_iteracao, percentual_corte = .50, qtde_minimo_atendido = 3))
+}
+for (i in 1:qtde_atendentes) {
+  df_simulados <- rbind(df_simulados, simulador_computacional_iteracao(i, qtde_iteracao, percentual_corte = .50, qtde_minimo_atendido = 4))
 }
 
 print(df_simulados)
@@ -433,17 +458,158 @@ print(df_simulados)
 
 # Analisando resultados das simulações
 ```{r}
-
-# 1,2,7,12,11
 df_simulados_analise <- df_simulados[,colunas]
 ```
-## Correlação
+
 ```{r}
-pairs(df_simulados[, c(3:11)])
-corrplot(cor(df_simulados[, c(3:11)]), method = "number")
+# hist(df_simulados_analise$tempo_max_fila, main = "Histograma: tempos de chegada", xlab = "Tempo de chegada", ylab = "Frequência", col = "blue")
+colunas2 <- c(
+  "qtde_atendentes",
+  "tempo_total",
+  "tempo_total_da_fila_ocupada",
+  "tempo_max_fila",
+  "media_na_fila",
+  "tamanho_max_fila",
+  "tempo_atendente_ocioso_media"
+)
+
+df_todos_simulado <- rbind(df_simulado_original, df_simulados_analise)
+data_grafico <- df_todos_simulado[, colunas2]
 
 ```
 
+## Correlação
 ```{r}
+# pairs(df_simulados[, c(3:11)])
+corrplot(cor(data_grafico), method = "number")
+
+```
+### Podemos notar uma forte correlação entre a quantidade de atendentes e o tempo ocioso
+### Também podemos ver uma forte correlação entre si nas métricas da fila, mostrando que, conforme o tamanho maximo fila diminui, o tempo médio e o tempo total da fila também diminuem.
+### O tempo total do atendimento também diminui conforme o tempo da fila diminui.
+
+## Grafico relacionando o tempo total de atendimento com o tempo de ociosidade dos atendentes
+```{r}
+data_grafico$qtde_atendentes <- as.factor(data_grafico$qtde_atendentes)
+
+ggplot(data_grafico, aes(x=tempo_atendente_ocioso_media, y=tempo_total)) +
+  geom_point(aes(col=qtde_atendentes), size=2)
+```
+### Com o gráfico podemos observar que as simulações com 2 atendentes possuio tempo de ociosidade próximo ao minimo e um tempo de atendimento total médio
+### Já as simulações com 3 atendentes apresenta os melhores resultados, possuindo um tempo de atendimento total próximo ao minimo e um tempo ocioso baixo
+### Podemos notar também que com 4 ou mais atendentes o valor total do atendimento continua próximo ao minimo porém aumentando mais o tempo de ociosidade dos atendentes
+```{r}
+ggplot(data_grafico, aes(x=tamanho_max_fila, y=tempo_max_fila)) +
+  geom_point(aes(col=qtde_atendentes), size=2)
+```
+### Observando esse segundo grafico podemos ver que as simulações com 1 atendente possuem o tempo maximo na fila muito alto, isso cai para menos da metade com 2 atendentes.
+### Já com 3 atendentes, o tempo maximo e o tamanho maximo da fila ficam próximos do minimo.
+### As simulações com 4 atendentes ou novamente não apresentam ganhos significativos
+
+## Como visto, 4 atendentes ou mais não apresentam ganhos, sendo assim iremos desconsidera-los da para frente
+```{r}
+data_grafico$qtde_atendentes <- as.integer(data_grafico$qtde_atendentes)
+data_grafico <- data_grafico[data_grafico$qtde_atendentes <=3,]
+```
+
+```{r}
+ggplot(data_grafico[data_grafico$qtde_atendentes == 1,], aes(x=tamanho_max_fila, y=tempo_max_fila)) +
+  geom_point(aes(col=row.names(data_grafico[data_grafico$qtde_atendentes == 1,])), size=2) +
+  geom_label(
+    label=rownames(data_grafico[data_grafico$qtde_atendentes == 1,]),
+    nudge_x = 0.25, nudge_y = 0.25)
+
+ggplot(data_grafico[data_grafico$qtde_atendentes == 2,], aes(x=tamanho_max_fila, y=tempo_max_fila)) +
+  geom_point(aes(col=row.names(data_grafico[data_grafico$qtde_atendentes == 2,])), size=2) +
+  geom_label(
+    label=rownames(data_grafico[data_grafico$qtde_atendentes == 3,]),
+    nudge_x = 0.25, nudge_y = 0.25
+  )
+
+ggplot(data_grafico[data_grafico$qtde_atendentes == 3,], aes(x=tamanho_max_fila, y=tempo_max_fila)) +
+  geom_point(aes(col=row.names(data_grafico[data_grafico$qtde_atendentes == 3,])), size=2) +
+  geom_label(
+    label=rownames(data_grafico[data_grafico$qtde_atendentes == 3,]),
+    nudge_x = 0.25, nudge_y = 0.25)
+```
+
+```{r}
+
+ggplot(data_grafico[data_grafico$qtde_atendentes == 1,], aes(x=tempo_atendente_ocioso_media, y=tempo_total)) +
+  geom_point(aes(col=row.names(data_grafico[data_grafico$qtde_atendentes == 1,])), size=2) +
+  geom_label(
+    label=rownames(data_grafico[data_grafico$qtde_atendentes == 1,]),
+    nudge_x = 0.25, nudge_y = 0.25)
+
+ggplot(data_grafico[data_grafico$qtde_atendentes == 2,], aes(x=tempo_atendente_ocioso_media, y=tempo_total)) +
+  geom_point(aes(col=row.names(data_grafico[data_grafico$qtde_atendentes == 2,])), size=2) +
+  geom_label(
+    label=rownames(data_grafico[data_grafico$qtde_atendentes == 3,]),
+    nudge_x = 0.25, nudge_y = 0.25
+  )
+
+ggplot(data_grafico[data_grafico$qtde_atendentes == 3,], aes(x=tempo_atendente_ocioso_media, y=tempo_total)) +
+  geom_point(aes(col=row.names(data_grafico[data_grafico$qtde_atendentes == 3,])), size=2) +
+  geom_label(
+    label=rownames(data_grafico[data_grafico$qtde_atendentes == 3,]),
+    nudge_x = 0.25, nudge_y = 0.25)
+```
+
+
+```{r}
+# Grafico de rede das simulações de 1 atendente
+data_grafico_spider_1 <- rbind(
+  c(7, min(df_todos_simulado$tempo_total), min(df_todos_simulado$tempo_total_da_fila_ocupada), min(df_todos_simulado$tempo_max_fila), 0, 0, 0),
+  c(0, max(df_todos_simulado$tempo_total), max(df_todos_simulado$tempo_total_da_fila_ocupada), max(df_todos_simulado$tempo_max_fila), max(df_todos_simulado$media_na_fila), max(df_todos_simulado$tamanho_max_fila), max(df_todos_simulado$tempo_atendente_ocioso_media)),
+  data_grafico[data_grafico$qtde_atendentes == 1,])
+
+# plot with default options:
+radarchart( data_grafico_spider_1  , axistype=2 ,
+            plwd=4 , plty=1,
+            #custom the grid
+            cglcol="grey", cglty=1, axislabcol="grey", caxislabels=seq(0,20,5), cglwd=0.8,
+            #custom labels
+            vlcex=0.8
+)
+
+# Add a legend
+legend(x=1.3, y=1, legend = rownames(data_grafico_spider_1[-c(1,2),]), bty = "n", pch=20 , col=colors_in , text.col = "grey", cex=1.2, pt.cex=3)
+
+# Grafico de rede das simulações de 2 atendente
+data_grafico_spider_2 <- rbind(
+  c(7, min(df_todos_simulado$tempo_total), min(df_todos_simulado$tempo_total_da_fila_ocupada), min(df_todos_simulado$tempo_max_fila), 0, 0, 0),
+  c(0, max(df_todos_simulado$tempo_total), max(df_todos_simulado$tempo_total_da_fila_ocupada), max(df_todos_simulado$tempo_max_fila), max(df_todos_simulado$media_na_fila), max(df_todos_simulado$tamanho_max_fila), max(df_todos_simulado$tempo_atendente_ocioso_media)),
+  data_grafico[data_grafico$qtde_atendentes == 2,])
+
+# plot with default options:
+radarchart( data_grafico_spider_2  , axistype=2 ,
+            plwd=4 , plty=1,
+            #custom the grid
+            cglcol="grey", cglty=1, axislabcol="grey", caxislabels=seq(0,20,5), cglwd=0.8,
+            #custom labels
+            vlcex=0.8
+)
+
+# Add a legend
+legend(x=1.3, y=1, legend = rownames(data_grafico_spider_2[-c(1,2),]), bty = "n", pch=20 , col=colors_in , text.col = "grey", cex=1.2, pt.cex=3)
+
+
+# Grafico de rede das simulações de 3 atendente
+data_grafico_spider_3 <- rbind(
+  c(7, min(df_todos_simulado$tempo_total), min(df_todos_simulado$tempo_total_da_fila_ocupada), min(df_todos_simulado$tempo_max_fila), 0, 0, 0),
+  c(0, max(df_todos_simulado$tempo_total), max(df_todos_simulado$tempo_total_da_fila_ocupada), max(df_todos_simulado$tempo_max_fila), max(df_todos_simulado$media_na_fila), max(df_todos_simulado$tamanho_max_fila), max(df_todos_simulado$tempo_atendente_ocioso_media)),
+  data_grafico[data_grafico$qtde_atendentes == 3,])
+
+# plot with default options:
+radarchart( data_grafico_spider_3, axistype=2 ,
+            plwd=4 , plty=1,
+            #custom the grid
+            cglcol="grey", cglty=1, axislabcol="grey", caxislabels=seq(0,20,5), cglwd=0.8,
+            #custom labels
+            vlcex=0.8
+)
+
+# Add a legend
+legend(x=1, y=1, legend = rownames(data_grafico_spider_3[-c(1,2),]), bty = "n", pch=20 , col=colors_in , text.col = "grey", cex=1.2, pt.cex=3)
 
 ```
