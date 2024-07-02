@@ -66,7 +66,7 @@ amplitude_servico <- max(dataframe_tempos$servico) - min(dataframe_tempos$servic
 ### Criando data frame com medidas de posição e dispersão dos dados
 ```{r}
 df_medidas <- data.frame(
-  Metrica = c("Média", "Desvio Padrão", "Variância", "Mediana", "Mínimo", "Máximo", "Amplitude", "Outlier Baixo Moderado", "Outlier Alto Moderado", "Outlier Baixo Extremo", "Outlier Alto Extremo"),
+  Dado = c("Média", "Desvio Padrão", "Variância", "Mediana", "Mínimo", "Máximo", "Amplitude", "Q1", "Q3", "Outlier Baixo Moderado", "Outlier Alto Moderado", "Outlier Baixo Extremo", "Outlier Alto Extremo"),
   TempoChegada = c(
     mean(dataframe_tempos$chegada),  # média
     sd(dataframe_tempos$chegada),  # desvio padrão
@@ -74,7 +74,9 @@ df_medidas <- data.frame(
     median(dataframe_tempos$chegada),  # mediana
     min(dataframe_tempos$chegada),  # minimo
     max(dataframe_tempos$chegada),  # maximo
-    amplitude_chegada,  # amplitude
+    amplitude_chegada,  # amplitude,
+    quantile_chegada[1],
+    quantile_chegada[3],
     quantile_chegada[1] - 1.5 * amplitude_chegada,
     quantile_chegada[3] + 1.5 * amplitude_chegada,
     quantile_chegada[1] - 3 * amplitude_chegada,
@@ -88,12 +90,16 @@ df_medidas <- data.frame(
     min(dataframe_tempos$servico),  # minimo
     max(dataframe_tempos$servico),  # maximo
     amplitude_servico,  # amplitude
+    quantile_servico[1],
+    quantile_servico[3],
     quantile_servico[1] - 1.5 * amplitude_servico,
     quantile_servico[3] + 1.5 * amplitude_servico,
     quantile_servico[1] - 3 * amplitude_servico,
     quantile_servico[3] + 3 * amplitude_servico
   )
 )
+
+df_medidas
 ```
 #### Com o dataframe é possível identificar que o dataset não possui outliers.
 
@@ -110,8 +116,15 @@ hist(dataframe_tempos$servico, main = "Histograma: tempos de serviço", xlab = "
 pairs(dataframe_tempos)
 acf(dataframe_tempos$chegada, pl = TRUE)
 acf(dataframe_tempos$servico, pl = TRUE)
-corrplot(cor(dataframe_tempos), method = "number")
 
+col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
+corrplot(cor(dataframe_tempos), method="color", col=col(200),
+         type="upper",
+         order="hclust",
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         diag=FALSE
+)
 ```
 # Criando funções
 ## Simulador Computacional quantitativo
